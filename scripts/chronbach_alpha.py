@@ -13,7 +13,7 @@ def cronbach_alpha(df):
     alpha = (k / (k - 1)) * (1 - variances.sum() / total_var)
     return alpha
 
-data = pd.read_csv("/Users/bazam/dev/Italian_analysis/data/knowledge-italy.csv")  
+data = pd.read_csv("/Users/bazam/dev/Italian_analysis/data/demo_clusters.csv")  
 
 # Select all knowledge question columns (exclude respondent_id)
 knowledge_items = data.drop(columns=["respondent_id"])
