@@ -17,11 +17,11 @@ output_kw = os.path.join(base_output, "attitude_kruskal_results.csv")
 output_dunn = os.path.join(base_output, "attitude_dunn_posthoc.csv")
 
 # === Load data ===
-df_aw = pd.read_csv(attitude_file)
+df_at = pd.read_csv(attitude_file)
 df_know = pd.read_csv(knowledge_file)
 
 # Merge on respondent_id
-df = df_aw.merge(df_know, on="respondent_id", how="left")
+df = df_at.merge(df_know, on="respondent_id", how="left")
 df.rename(columns={"cluster": "cluster_label"}, inplace=True)
 
 print(f"✅ Data merged successfully: {df.shape[0]} respondents")
