@@ -70,4 +70,4 @@ Contributions are welcome! Please open an issue or pull request for suggestions,
 ## 📧 Contact  
 For questions, reach out to:  
 - **Barbara Zambelli** – [b.zambelliazevedo@studenti.unipi.it]  
-- Project maintained at: [https://github.com/Taiobarbara/GW-MP-survey-analysis]  
+- Project maintained at: [https://github.com/Taiobarbara/Italian_analysis]  
