@@ -22,12 +22,16 @@ df_know = pd.read_csv(knowledge_file)
 
 # Merge on respondent_id
 df = df_at.merge(df_know, on="respondent_id", how="left")
-df.rename(columns={"cluster": "cluster_label"}, inplace=True)
+
+df = df.rename(columns={"Cluster_y": "cluster"})
+df = df.drop(columns=["Cluster_x"])
+
+df["cluster"]
 
 print(f"✅ Data merged successfully: {df.shape[0]} respondents")
 
 # Identify awareness question columns
-attitude_cols = [c for c in df.columns if c.startswith("Q")]
+attitude_cols = ["Q8", "Q9", "Q10", "Q14", "Q19", "Q21", "Q24", "Q29"]
 
 # =============================================================================
 # 1. Spearman correlations with knowledge score
@@ -58,9 +62,10 @@ kw_results = []
 for q in attitude_cols:
     groups = [
         g[q].dropna()
-        for _, g in df.groupby("Cluster")
-        if len(g[q].dropna()) > 0
+        for _, g in df.groupby("cluster")
+        if g[q].notna().sum() > 0
     ]
+
     if len(groups) > 1:
         H, p = kruskal(*groups)
         kw_results.append({
@@ -81,11 +86,12 @@ print(kw_df.round(3))
 dunn_results = []
 
 for q in kw_df.loc[kw_df["p_value"] < 0.05, "Question"]:
-    sub = df[["Cluster", q]].dropna()
+    sub = df[["cluster", q]].dropna()
+
     dunn = sp.posthoc_dunn(
         sub,
         val_col=q,
-        group_col="Cluster",
+        group_col="cluster",
         p_adjust="bonferroni"
     )
 
