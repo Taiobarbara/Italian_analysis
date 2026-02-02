@@ -43,7 +43,7 @@ def cluster_knowledge_with_silhouette(data_csv, n_clusters=4):
     return df_out, sil_score
 
 scores = {}
-for k in range(2, 8):  # test 2 to 6 clusters
+for k in range(2, 8):  # test 2 to 7 clusters
     _, sil = cluster_knowledge_with_silhouette("/Users/bazam/dev/Italian_analysis/data/knowledge-italy.csv", n_clusters=k)
     scores[k] = sil
 
@@ -83,7 +83,7 @@ def plot_silhouette_scores(scores, output_file="/Users/bazam/dev/Italian_analysi
     print(f"Silhouette score plot saved as {output_file}")
 
 scores = {}
-for k in range(2, 8):  # test k=2 to k=6
+for k in range(2, 8):  # test k=2 to k=7
     _, sil = cluster_knowledge_with_silhouette("/Users/bazam/dev/Italian_analysis/data/knowledge-italy.csv", n_clusters=k)
     scores[k] = sil
 
