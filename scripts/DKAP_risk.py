@@ -29,6 +29,7 @@ df_r = df_r.replace(0, np.nan)
 risk_questions = [c for c in df_r.columns if c != 'respondent_id']
 df_r['risk_score'] = df_r[risk_questions].mean(axis=1)
 
+
 # --- Merge datasets (keeping knowledge clusters fixed) ---
 df_full = (
     df_k
@@ -36,6 +37,8 @@ df_full = (
     .merge(df_p, on="respondent_id", how="left", suffixes=("", "_practice"))
     .merge(df_r, on="respondent_id", how="left", suffixes=("", "_risk"))
 )
+# Identify risk question columns
+risk_cols = ["Q6", "Q15", "Q17", "Q26"]
 
 # Confirm that cluster variable is from the knowledge file
 assert "Cluster" in df_k.columns, "⚠️ The 'cluster' variable must come from the knowledge dataset."
@@ -110,21 +113,44 @@ for var in risk_questions + ["risk_score"]:
     plt.savefig(os.path.join(base_out, f"{var}_boxplot.png"), dpi=300)
     plt.close()
 
-# --- Barplot for composite risk perception (mean per cluster) ---
-plt.figure(figsize=(8, 6))
-sns.barplot(
-    data=df_full,
-    x="Cluster",
-    y="risk_score",
-    estimator=np.median,
-    errorbar=("pi", 50),
-    palette="pastel"
+# --- Long format for risk questions ---
+risk_long = df_full.melt(
+    id_vars=["respondent_id", "Cluster"],
+    value_vars=risk_cols,
+    var_name="Risk_Question",
+    value_name="Risk_Value"
 )
-plt.title("Composite Risk Perception across Knowledge-Based Clusters")
-plt.xlabel("Cluster")
-plt.ylabel("Mean Risk Perception")
+
+# Drop missing values
+risk_long = risk_long.dropna(subset=["Risk_Value"])
+
+plt.figure(figsize=(8, 6))
+sns.boxplot(
+    data=risk_long,
+    x="Risk_Question",
+    y="Risk_Value",
+    showfliers=False
+)
+
+sns.stripplot(
+    data=risk_long,
+    x="Risk_Question",
+    y="Risk_Value",
+    color="black",
+    alpha=0.3,
+    jitter=0.2,
+    size=3
+)
+
+plt.title("Risk Perception Distribution per Question")
+plt.xlabel("Question")
+plt.ylabel("Risk Perception")
 plt.tight_layout()
-plt.savefig(os.path.join(base_out, "risk_perception_barplot.png"), dpi=300)
+
+plt.savefig(
+    os.path.join(base_out, "risk_perception_Qs_boxplot.png"),
+    dpi=300
+)
 plt.close()
 
 # --- Correlation matrix (Risk vs K/A/P) ---
