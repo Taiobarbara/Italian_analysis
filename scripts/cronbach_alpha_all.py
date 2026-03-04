@@ -21,9 +21,9 @@ def cronbach_alpha(items_df):
     return alpha
 
 # ---------- Define scale items ----------
-attitude_items = ["Q10","Q14","Q19","Q21","Q24","Q29"] #"Q8","Q9",
+attitude_items = ["Q8","Q9","Q10","Q14","Q19","Q21","Q24","Q29"] #"Q8","Q9",
 knowledge_items = ["Q1","Q5","Q11","Q12","Q13","Q16","Q18","Q22","Q23","Q25","Q27"]
-practice_items = ["Q2","Q3","Q4","Q20"] # "Q7","Q30"
+practice_items = ["Q2","Q3","Q4","Q20", "Q7","Q30"] # "Q7","Q30"
 risk_items = ["Q6","Q15","Q17","Q26"]
 
 # ---------- Compute alphas ----------
@@ -32,19 +32,23 @@ alpha_knowledge = cronbach_alpha(df[knowledge_items])
 alpha_practice = cronbach_alpha(df[practice_items])
 alpha_risk = cronbach_alpha(df[risk_items])
 
-# ---------- Print results ----------
-print("Cronbach's Alpha Results:")
-print(f"Attitude scale:  {alpha_attitude:.4f}")
-print(f"Knowledge scale: {alpha_knowledge:.4f}")
-print(f"Practice scale:  {alpha_practice:.4f}")
-print(f"Risk scale:      {alpha_risk:.4f}")
+# ---------- Subsets ----------
+df_female = df[df["gender_female"] == 1]
+df_male = df[df["gender_male"] == 1]
 
+# ---------- Compute alphas ----------
+def compute_all_alphas(data, label):
+    print(f"\nCronbach's Alpha - {label}")
+    print(f"Attitude:  {cronbach_alpha(data[attitude_items]):.4f}")
+    print(f"Knowledge: {cronbach_alpha(data[knowledge_items]):.4f}")
+    print(f"Practice:  {cronbach_alpha(data[practice_items]):.4f}")
+    print(f"Risk:      {cronbach_alpha(data[risk_items]):.4f}")
 
-# ---------- Exclude Cluster 0 from risk ----------
-df_no_cluster0 = df[df["Cluster"] != 0]
+# Full sample
+compute_all_alphas(df, "Full Sample")
 
-# ---------- Compute alpha ----------
-alpha_risk_no_cluster0 = cronbach_alpha(df_no_cluster0[risk_items])
+# Female
+compute_all_alphas(df_female, "Female")
 
-print("Cronbach's Alpha for Risk Scale (excluding Cluster 0):")
-print(f"{alpha_risk_no_cluster0:.4f}")
+# Male
+compute_all_alphas(df_male, "Male")
