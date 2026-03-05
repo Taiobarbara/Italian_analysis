@@ -39,8 +39,8 @@ Key Python packages:
 ## 🚀 Usage  
 1. Clone this repository:  
    ```bash
-   git clone https://github.com/yourusername/microplastics-risk-perception.git
-   cd microplastics-risk-perception
+   git clone https://github.com/yourusername/Italian_analysis.git
+   cd Italian_analysis
    ```  
 2. (Optional) Create and activate a virtual environment.  
 3. Run analysis:  
