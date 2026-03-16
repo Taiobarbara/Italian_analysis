@@ -3,17 +3,17 @@ from kmodes.kprototypes import KPrototypes
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-def cluster_knowledge(data_csv, n_clusters=3, output_csv="clusters.csv", heatmap_file="clusters_boxplot.png"): #ajust here the number of clusters
+def cluster_knowledge(data_csv, n_clusters=6, output_csv="clusters.csv", heatmap_file="clusters_boxplot.png"): #ajust here the number of clusters
     """
     Cluster respondents based on knowledge score and demographic one-hot data.
     Also generate summary plots.
 
-    data_csv: /Users/bazam/dev/Italian_analysis/data/knowledge-italy.csv
+    data_csv: /Users/bazam/dev/Italian_analysis/data/datacombined-italy2.csv
     n_clusters: number of clusters 
     output_csv: /Users/bazam/dev/Italian_analysis/results/
     """
     # Load dataset (skip first row of section headers, use second row for columns)
-    df = pd.read_csv(data_csv, header=1)
+    df = pd.read_csv(data_csv)
 
     # Separate respondent_id
     respondent_ids = df["respondent_id"]
@@ -67,6 +67,6 @@ def cluster_knowledge(data_csv, n_clusters=3, output_csv="clusters.csv", heatmap
 
     return df_out, cluster_summary
 
-df_clusters, summary = cluster_knowledge("/Users/bazam/dev/Italian_analysis/data/knowledge-italy.csv", n_clusters=3) #adjust here the number of clusters
+df_clusters, summary = cluster_knowledge("/Users/bazam/dev/Italian_analysis/data/datacombined-italy2.csv", n_clusters=6) #adjust here the number of clusters
 
 print(summary)

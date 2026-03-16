@@ -9,14 +9,17 @@ def cluster_knowledge_with_silhouette(data_csv, n_clusters=4):
     Cluster respondents with K-Prototypes and calculate silhouette score.
     """
     # Load dataset
-    df = pd.read_csv(data_csv, header=1)
+    df = pd.read_csv(data_csv)
 
     respondent_ids = df["respondent_id"]
     df = df.drop(columns=["respondent_id"])
     df["knowledge_score"] = df["knowledge_score"].astype(float)
 
     # Identify categorical vs numeric
-    categorical_cols = [i for i, col in enumerate(df.columns) if set(df[col].unique()) <= {0, 1}]
+    categorical_cols = [
+    i for i, col in enumerate(df.columns)
+    if df[col].nunique() <= 5 and col not in ["knowledge_score","attitude_score","practice_score","risk_score"]
+    ]
     numeric_cols = [i for i, col in enumerate(df.columns) if i not in categorical_cols]
 
     # Fit clustering
@@ -44,7 +47,7 @@ def cluster_knowledge_with_silhouette(data_csv, n_clusters=4):
 
 scores = {}
 for k in range(2, 8):  # test 2 to 7 clusters
-    _, sil = cluster_knowledge_with_silhouette("/Users/bazam/dev/Italian_analysis/data/knowledge-italy.csv", n_clusters=k)
+    _, sil = cluster_knowledge_with_silhouette("/Users/bazam/dev/Italian_analysis/data/datacombined-italy2.csv", n_clusters=k)
     scores[k] = sil
 
 print("\nSilhouette scores by number of clusters:")
@@ -81,10 +84,5 @@ def plot_silhouette_scores(scores, output_file="/Users/bazam/dev/Italian_analysi
     plt.savefig(output_file, dpi=300)
     plt.show()
     print(f"Silhouette score plot saved as {output_file}")
-
-scores = {}
-for k in range(2, 8):  # test k=2 to k=7
-    _, sil = cluster_knowledge_with_silhouette("/Users/bazam/dev/Italian_analysis/data/knowledge-italy.csv", n_clusters=k)
-    scores[k] = sil
 
 plot_silhouette_scores(scores)

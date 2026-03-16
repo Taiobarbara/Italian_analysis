@@ -5,79 +5,101 @@ import seaborn as sns
 import os
 from scipy.stats import spearmanr
 
-# ------------------------------------------------------------
 # Paths
-# ------------------------------------------------------------
 base_input = "/Users/bazam/dev/Italian_analysis/data/"
 base_output = "/Users/bazam/dev/Italian_analysis/results/"
 
-practice_file = os.path.join(base_input, "practice-italy.csv")
-knowledge_file = os.path.join(base_input, "demo_clusters.csv")
-attitude_file = os.path.join(base_input, "attitude-italy.csv")
+data_file = os.path.join(base_input, "datacombined-italy2.csv")
 
-# ------------------------------------------------------------
 # Load data
-# ------------------------------------------------------------
-pract = pd.read_csv(practice_file)
-know = pd.read_csv(knowledge_file)
-att = pd.read_csv(attitude_file)
+df = pd.read_csv(data_file)
 
-# ------------------------------------------------------------
-# Compute composite scores
-# ------------------------------------------------------------
-pract_questions = [col for col in pract.columns if col.startswith("Q")]
-pract["practice_composite"] = pract[pract_questions].mean(axis=1, skipna=True)
-att["attitude_composite"] = att[[c for c in att.columns if c.startswith("Q")]].mean(axis=1, skipna=True)
+# Standardise cluster column
+df = df.rename(columns={"Cluster": "cluster"})
+df["cluster"] = df["cluster"].astype(int)
 
-# Merge datasets
-merged = (
-    pract[["respondent_id", "practice_composite"]]
-    .merge(know, on="respondent_id", how="inner")
-    .merge(att[["respondent_id", "attitude_composite"]], on="respondent_id", how="inner")
-)
+# Question definitions
+practice_items = ["Q2","Q4","Q7","Q20"]
 
-# ------------------------------------------------------------
+df["practice_composite"] = df["practice_score"]
+
 # Correlation Analysis
-# ------------------------------------------------------------
+
 corr_results = []
 
-for ref, col in [("Knowledge", "knowledge_score"), ("Attitude", "attitude_composite")]:
+for ref, col in [
+    ("Knowledge", "knowledge_score"),
+    ("Attitude", "attitude_score")
+]:
+
     rho, p = spearmanr(
-        merged["practice_composite"],
-        merged[col],
+        df["practice_composite"],
+        df[col],
         nan_policy="omit"
     )
+
     corr_results.append({
         "Reference": ref,
         "Spearman_rho": rho,
         "p_value": p
     })
 
-# ------------------------------------------------------------
-# Scatterplot matrix (Knowledge, Attitude, Practice)
-# ------------------------------------------------------------
-sns.pairplot(
-    merged[["knowledge_score", "attitude_composite", "practice_composite"]],
-    diag_kind="kde",
-    plot_kws={"alpha": 0.6},
+corr_df = pd.DataFrame(corr_results)
+
+corr_df.to_csv(
+    os.path.join(base_output, "practice_correlation_results.csv"),
+    index=False
 )
-plt.suptitle("Scatterplot Matrix: Knowledge, Attitude, Practice", y=1.02)
-scatter_matrix_path = base_output + "practice_scatter_matrix.png"
+
+print("Correlation results saved")
+
+# Scatterplot matrix (Knowledge, Attitude, Practice)
+sns.pairplot(
+    df[["knowledge_score","attitude_score","practice_composite"]],
+    diag_kind="kde",
+    plot_kws={"alpha":0.6}
+)
+
+plt.suptitle(
+    "Scatterplot Matrix: Knowledge, Attitude, Practice",
+    y=1.02
+)
+
+scatter_matrix_path = os.path.join(
+    base_output,
+    "practice_scatter_matrix.png"
+)
+
 plt.savefig(scatter_matrix_path, bbox_inches="tight", dpi=300)
 plt.close()
 
-corr_df = pd.DataFrame(corr_results)
-corr_df.to_csv(base_output + "practice_correlation_results.csv", index=False)
+print("Scatter matrix saved")
 
-# ------------------------------------------------------------
-# Cluster heatmap (mean scores per cluster)
-# ------------------------------------------------------------
-cluster_means = merged.merge(pract, on="respondent_id")[pract_questions + ["Cluster"]]
-cluster_mean_df = cluster_means.groupby("Cluster").mean()
+# Cluster heatmap (mean practice scores per cluster)
+cluster_mean_df = (
+    df.groupby("cluster")[practice_items]
+    .mean()
+)
 
-plt.figure(figsize=(10, 6))
-sns.heatmap(cluster_mean_df, annot=True, cmap="coolwarm", cbar=True)
-plt.title("Mean Practice Scores by Cluster")
-heatmap_path = base_output + "practice_cluster_heatmap.png"
+plt.figure(figsize=(8,5))
+
+sns.heatmap(
+    cluster_mean_df,
+    annot=True,
+    cmap="coolwarm",
+    cbar=True
+)
+
+plt.title("Mean Practice Scores by Knowledge Cluster")
+plt.xlabel("Practice Question")
+plt.ylabel("Cluster")
+
+heatmap_path = os.path.join(
+    base_output,
+    "practice_cluster_heatmap.png"
+)
+
 plt.savefig(heatmap_path, bbox_inches="tight", dpi=300)
 plt.close()
+
+print("Cluster heatmap saved")

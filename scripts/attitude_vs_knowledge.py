@@ -9,29 +9,22 @@ import scikit_posthocs as sp
 base_input = "/Users/bazam/dev/Italian_analysis/data/"
 base_output = "/Users/bazam/dev/Italian_analysis/results/"
 
-attitude_file = os.path.join(base_input, "attitude-italy.csv")
-knowledge_file = os.path.join(base_input, "demo_clusters.csv")
+database = os.path.join(base_input, "datacombined-italy2.csv")
 
 output_corr = os.path.join(base_output, "attitude_question_spearman_correlations.csv")
 output_kw = os.path.join(base_output, "attitude_kruskal_results.csv")
 output_dunn = os.path.join(base_output, "attitude_dunn_posthoc.csv")
 
 # === Load data ===
-df_at = pd.read_csv(attitude_file)
-df_know = pd.read_csv(knowledge_file)
+df = pd.read_csv(database)
 
-# Merge on respondent_id
-df = df_at.merge(df_know, on="respondent_id", how="left")
-
-df = df.rename(columns={"Cluster_y": "cluster"})
-df = df.drop(columns=["Cluster_x"])
+df = df.rename(columns={"Cluster": "cluster"})
 
 df["cluster"]
 
-print(f"✅ Data merged successfully: {df.shape[0]} respondents")
 
 # Identify awareness question columns
-attitude_cols = ["Q8", "Q9", "Q10", "Q14", "Q19", "Q21", "Q24", "Q29"]
+attitude_cols = ["Q3","Q9","Q10","Q19","Q21","Q29"] 
 
 # =============================================================================
 # 1. Spearman correlations with knowledge score

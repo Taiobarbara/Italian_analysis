@@ -2,12 +2,12 @@ import pandas as pd
 from kmodes.kprototypes import KPrototypes
 from sklearn.metrics import davies_bouldin_score
 
-def evaluate_clusters(data_csv, k_range=[3,4,5,6]):
+def evaluate_clusters(data_csv, k_range=[3,4,5,6,7]):
     """
     Compute Inertia (WCSS) and Davies-Bouldin Index for different cluster numbers.
     """
     # Load dataset (skip first row of section headers, use second row for columns)
-    df = pd.read_csv(data_csv, header=1)
+    df = pd.read_csv(data_csv)
 
     respondent_ids = df["respondent_id"]
     df = df.drop(columns=["respondent_id"])
@@ -43,6 +43,6 @@ def evaluate_clusters(data_csv, k_range=[3,4,5,6]):
 
     return pd.DataFrame(results).T
 
-results = evaluate_clusters("/Users/bazam/dev/Italian_analysis/data/knowledge-italy.csv", k_range=[2,3,4,5,6])
+results = evaluate_clusters("/Users/bazam/dev/Italian_analysis/data/datacombined-italy2.csv", k_range=[2,3,4,5,6,7])
 print("\n=== Clustering Evaluation Results ===")
 print(results)

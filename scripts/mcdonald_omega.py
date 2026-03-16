@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 
 # Load dataset
-df = pd.read_csv("/Users/bazam/dev/Italian_analysis/data/datacombined-italy.csv")
+df = pd.read_csv("/Users/bazam/dev/Italian_analysis/data/datacombined-italy2.csv")
 
 def mcdonalds_omega(items_df):
     
@@ -39,13 +39,13 @@ def mcdonalds_omega(items_df):
     
     return float(np.real(omega))
 
-attitude_items = ["Q8","Q9","Q10","Q14","Q19","Q21","Q24","Q29"]
-knowledge_items = ["Q1","Q5","Q11","Q12","Q13","Q16","Q18","Q22","Q23","Q25","Q27"]
-practice_items = ["Q2","Q3","Q4","Q7","Q20","Q30"]
-risk_items = ["Q6","Q15","Q17","Q26"]
+knowledge_items = ["Q1","Q5","Q8","Q11","Q12","Q13","Q14","Q16","Q18","Q22","Q26","Q27"]
+attitude_items = ["Q3","Q9","Q10","Q19","Q21","Q29"] 
+practice_items = ["Q2","Q4","Q20", "Q7"]
+risk_items = ["Q6","Q15","Q17","Q23","Q24","Q25"]
 
-print("McDonald's Omega (Pure NumPy)")
-print(f"Attitude:  {mcdonalds_omega(df[attitude_items]):.4f}")
+print("McDonald's Omega")
 print(f"Knowledge: {mcdonalds_omega(df[knowledge_items]):.4f}")
+print(f"Attitude:  {mcdonalds_omega(df[attitude_items]):.4f}")
 print(f"Practice:  {mcdonalds_omega(df[practice_items]):.4f}")
 print(f"Risk:      {mcdonalds_omega(df[risk_items]):.4f}")

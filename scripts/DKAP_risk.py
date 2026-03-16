@@ -2,129 +2,145 @@ import os
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-from math import pi
 import seaborn as sns
 from scipy import stats
-import statsmodels.api as sm
-from statsmodels.formula.api import ols
-from statsmodels.stats.multicomp import pairwise_tukeyhsd
+import scikit_posthocs as sp
 
-# --- Paths ---
+# ------------------------------------------------------------
+# Paths
+# ------------------------------------------------------------
 base_in = "/Users/bazam/dev/Italian_analysis/data/"
 base_out = "/Users/bazam/dev/Italian_analysis/results/"
 
-practice_file = os.path.join(base_in, "practice-italy.csv")
-knowledge_file = os.path.join(base_in, "demo_clusters.csv")
-attitude_file = os.path.join(base_in, "attitude-italy.csv")
-risk_path = os.path.join(base_in, "risk-italy.csv")
+data_file = os.path.join(base_in, "datacombined-italy2.csv")
 
-# --- Load data ---
-df_k = pd.read_csv(knowledge_file)
-df_a = pd.read_csv(attitude_file)
-df_p = pd.read_csv(practice_file)
-df_r = pd.read_csv(risk_path)
+# ------------------------------------------------------------
+# Load data
+# ------------------------------------------------------------
+df = pd.read_csv(data_file)
 
-# --- Clean risk data ---
-df_r = df_r.replace(0, np.nan)
-risk_questions = [c for c in df_r.columns if c != 'respondent_id']
-df_r['risk_score'] = df_r[risk_questions].mean(axis=1)
+# Standardise cluster column
+df = df.rename(columns={"Cluster": "cluster"})
+df["cluster"] = df["cluster"].astype(int)
 
+# ------------------------------------------------------------
+# Question definitions
+# ------------------------------------------------------------
+knowledge_items = ["Q1","Q5","Q8","Q11","Q12","Q13","Q14","Q16","Q18","Q22","Q26","Q27"]
+attitude_items = ["Q3","Q9","Q10","Q19","Q21","Q29"]
+practice_items = ["Q2","Q4","Q20","Q7"]
+risk_items = ["Q6","Q15","Q17","Q23","Q24","Q25"]
 
-# --- Merge datasets (keeping knowledge clusters fixed) ---
-df_full = (
-    df_k
-    .merge(df_a, on="respondent_id", how="left", suffixes=("", "_attitude"))
-    .merge(df_p, on="respondent_id", how="left", suffixes=("", "_practice"))
-    .merge(df_r, on="respondent_id", how="left", suffixes=("", "_risk"))
-)
-# Identify risk question columns
-risk_cols = ["Q6", "Q15", "Q17", "Q26"]
+# ------------------------------------------------------------
+# Optional: recompute risk score if needed
+# ------------------------------------------------------------
+df["risk_score"] = df[risk_items].mean(axis=1)
 
-# Confirm that cluster variable is from the knowledge file
-assert "Cluster" in df_k.columns, "⚠️ The 'cluster' variable must come from the knowledge dataset."
-print(f"Cluster variable sourced from knowledge file with {df_full['Cluster'].nunique()} unique clusters.")
+# ------------------------------------------------------------
+# Radar plot preparation (cluster means)
+# ------------------------------------------------------------
+core_vars = ["knowledge_score","attitude_score","practice_score","risk_score"]
 
-# --- Compute composite attitude and practice if not present ---
-if "attitude_composite" not in df_full.columns:
-    attitude_cols = [c for c in df_a.columns if c.startswith("Q")]
-    df_full["attitude_composite"] = df_full[attitude_cols].mean(axis=1)
+cluster_means = df.groupby("cluster")[core_vars].mean().reset_index()
 
-if "practice_composite" not in df_full.columns:
-    practice_cols = [c for c in df_p.columns if c.startswith("Q")]
-    df_full["practice_composite"] = df_full[practice_cols].mean(axis=1)
-
-# --- Select DKAP + Risk variables ---
-core_vars = ["knowledge_score", "attitude_composite", "practice_composite", "risk_score", "Cluster"] 
-
-# --- Normalization for radar plot (grouped by existing clusters) ---
-normalized = df_full.groupby("Cluster")[core_vars[:-1]].mean().reset_index()
-normalized[core_vars[:-1]] = normalized[core_vars[:-1]].apply(
+# Normalize for radar
+norm = cluster_means.copy()
+norm[core_vars] = norm[core_vars].apply(
     lambda x: (x - x.min()) / (x.max() - x.min())
 )
 
-import scikit_posthocs as sp
-
+# ------------------------------------------------------------
+# Kruskal–Wallis + Dunn tests
+# ------------------------------------------------------------
 kw_results = []
 dunn_results = []
 
-for var in ["risk_score"] + risk_questions:
-    tmp = df_full[["Cluster", var]].dropna()
+for var in ["risk_score"] + risk_items:
 
-    if tmp["Cluster"].nunique() > 1:
-        # --- Kruskal–Wallis test ---
-        grouped = [
-            group[var].values
-            for _, group in tmp.groupby("Cluster")
+    tmp = df[["cluster",var]].dropna()
+
+    if tmp["cluster"].nunique() > 1:
+
+        groups = [
+            g[var].values
+            for _, g in tmp.groupby("cluster")
         ]
 
-        H, p = stats.kruskal(*grouped)
-        kw_results.append((var, H, p))
+        H, p = stats.kruskal(*groups)
+        kw_results.append((var,H,p))
 
-        # --- Dunn post-hoc test (Bonferroni corrected) ---
         dunn = sp.posthoc_dunn(
             tmp,
             val_col=var,
-            group_col="Cluster",
+            group_col="cluster",
             p_adjust="bonferroni"
         )
-        dunn_results.append((var, dunn))
 
-# Save Kruskal-Wallis and Dunn post hoc tests
-with open(os.path.join(base_out, "risk_perception_nonparametric_results.txt"), "w") as f:
+        dunn_results.append((var,dunn))
+
+# Save results
+with open(os.path.join(base_out,"risk_perception_nonparametric_results.txt"),"w") as f:
+
     f.write("=== Kruskal–Wallis tests ===\n")
-    for var, H, p in kw_results:
-        f.write(f"\n{var}: H = {H:.3f}, p = {p:.4f}\n")
 
-    f.write("\n\n=== Dunn post-hoc tests (Bonferroni corrected) ===\n")
-    for var, table in dunn_results:
-        f.write(f"\n{var}:\n")
+    for var,H,p in kw_results:
+        f.write(f"\n{var}: H={H:.3f}, p={p:.4f}\n")
+
+    f.write("\n\n=== Dunn post-hoc tests ===\n")
+
+    for var,table in dunn_results:
+        f.write(f"\n{var}\n")
         f.write(table.to_string())
         f.write("\n")
 
-# --- Boxplots for each risk perception question ---
-for var in risk_questions + ["risk_score"]:
-    plt.figure(figsize=(8, 6))
-    sns.boxplot(data=df_full, x="Cluster", y=var, palette="Set3")
-    sns.stripplot(data=df_full, x="Cluster", y=var, color="black", alpha=0.4, jitter=0.15)
+# ------------------------------------------------------------
+# Boxplots per risk question
+# ------------------------------------------------------------
+for var in risk_items + ["risk_score"]:
+
+    plt.figure(figsize=(8,6))
+
+    sns.boxplot(
+        data=df,
+        x="cluster",
+        y=var,
+        palette="Set3"
+    )
+
+    sns.stripplot(
+        data=df,
+        x="cluster",
+        y=var,
+        color="black",
+        alpha=0.4,
+        jitter=0.15
+    )
+
     plt.title(f"{var} across Knowledge-Based Clusters")
     plt.xlabel("Knowledge-Based Cluster")
-    plt.ylabel(var)
+    plt.ylabel("Risk perception")
+
     plt.tight_layout()
-    plt.savefig(os.path.join(base_out, f"{var}_boxplot.png"), dpi=300)
+
+    plt.savefig(
+        os.path.join(base_out,f"{var}_boxplot.png"),
+        dpi=300
+    )
+
     plt.close()
 
-# --- Long format for risk questions ---
-risk_long = df_full.melt(
-    id_vars=["respondent_id", "Cluster"],
-    value_vars=risk_cols,
+# ------------------------------------------------------------
+# Risk question distribution
+# ------------------------------------------------------------
+risk_long = df.melt(
+    id_vars=["respondent_id","cluster"],
+    value_vars=risk_items,
     var_name="Risk_Question",
     value_name="Risk_Value"
-)
+).dropna()
 
-# Drop missing values
-risk_long = risk_long.dropna(subset=["Risk_Value"])
+plt.figure(figsize=(8,6))
 
-plt.figure(figsize=(8, 6))
 sns.boxplot(
     data=risk_long,
     x="Risk_Question",
@@ -144,28 +160,44 @@ sns.stripplot(
 
 plt.title("Risk Perception Distribution per Question")
 plt.xlabel("Question")
-plt.ylabel("Risk Perception")
+plt.ylabel("Risk perception")
+
 plt.tight_layout()
 
 plt.savefig(
-    os.path.join(base_out, "risk_perception_Qs_boxplot.png"),
+    os.path.join(base_out,"risk_perception_Qs_boxplot.png"),
     dpi=300
 )
+
 plt.close()
 
-# --- Correlation matrix (Risk vs K/A/P) ---
-corr_vars = ["knowledge_score", "attitude_composite", "practice_composite", "risk_score"]
-corr = df_full[corr_vars].corr(method="spearman")
-plt.figure(figsize=(6, 5))
-sns.heatmap(corr, annot=True, cmap="coolwarm", vmin=-1, vmax=1)
+# ------------------------------------------------------------
+# Correlation matrix (DKAP + Risk)
+# ------------------------------------------------------------
+corr_vars = ["knowledge_score","attitude_score","practice_score","risk_score"]
+
+corr = df[corr_vars].corr(method="spearman")
+
+plt.figure(figsize=(6,5))
+
+sns.heatmap(
+    corr,
+    annot=True,
+    cmap="coolwarm",
+    vmin=-1,
+    vmax=1
+)
+
 plt.title("Correlation Matrix: DKAP + Risk Perception")
+
 plt.tight_layout()
-plt.savefig(os.path.join(base_out, "DKAP_Risk_correlation_matrix.png"), dpi=300)
+
+plt.savefig(
+    os.path.join(base_out,"DKAP_Risk_correlation_matrix.png"),
+    dpi=300
+)
+
 plt.close()
 
-print("\n✅ Risk perception extension completed successfully.")
+print("\n✅ Risk perception analysis completed successfully.")
 print(f"Results saved to: {base_out}")
-print("- risk_perception_ANOVA_results.txt")
-print("- DKAP_Risk_extended_radar.png")
-print("- risk_perception_barplot.png")
-print("- Boxplots for each risk question (Q6, Q15, Q17, Q26)")

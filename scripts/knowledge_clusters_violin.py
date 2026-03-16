@@ -2,7 +2,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 # Load your dataset
-df = pd.read_csv("/Users/bazam/dev/Italian_analysis/data/demo_clusters.csv")
+df = pd.read_csv("/Users/bazam/dev/Italian_analysis/data/datacombined-italy2.csv")
 
 # Ensure Cluster is treated as categorical
 df["Cluster"] = df["Cluster"].astype(str)

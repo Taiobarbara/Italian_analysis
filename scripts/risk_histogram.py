@@ -3,9 +3,9 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 
 # Load dataset
-df = pd.read_csv("/Users/bazam/dev/Italian_analysis/data/datacombined-italy.csv")
+df = pd.read_csv("/Users/bazam/dev/Italian_analysis/data/datacombined-italy2.csv")
 
-risk_items = ["Q6","Q15","Q17","Q26"]
+risk_items = ["Q6","Q15","Q17","Q23","Q24","Q25"]
 
 sns.set(style="whitegrid")
 

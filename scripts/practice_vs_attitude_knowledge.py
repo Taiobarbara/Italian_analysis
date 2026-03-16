@@ -13,52 +13,52 @@ import scikit_posthocs as sp
 base_input = "/Users/bazam/dev/Italian_analysis/data/"
 base_output = "/Users/bazam/dev/Italian_analysis/results/"
 
-practice_file = os.path.join(base_input, "practice-italy.csv")
-knowledge_file = os.path.join(base_input, "demo_clusters.csv")
-attitude_file = os.path.join(base_input, "attitude-italy.csv")
+data_file = os.path.join(base_input, "datacombined-italy2.csv")
 
 # =============================================================================
 # 📖 Load data
 # =============================================================================
-pract = pd.read_csv(practice_file)
-know = pd.read_csv(knowledge_file)
-att = pd.read_csv(attitude_file)
+df = pd.read_csv(data_file)
 
-df = (
-    pract
-    .merge(att, on="respondent_id", how="left")
-    .merge(know, on="respondent_id", how="left")
-)
-
-df = df.rename(columns={"Cluster_y": "cluster"})
-df = df.drop(columns=["Cluster_x"])
+# Ensure cluster column is lowercase and numeric
+df = df.rename(columns={"Cluster": "cluster"})
+df["cluster"] = df["cluster"].astype(int)
 
 print(df.columns.tolist())
 
 # =============================================================================
 # 🔢 Variable definitions
 # =============================================================================
-practice_qs = ["Q2", "Q3", "Q4", "Q7", "Q20", "Q30"]
-attitude_qs = ["Q8", "Q9", "Q10", "Q14", "Q19", "Q21", "Q24", "Q29"]
 
-df["attitude_mean"] = df[attitude_qs].mean(axis=1)
-#df["attitude_mean"] = df["attitude_composite"]
+knowledge_items = ["Q1","Q5","Q8","Q11","Q12","Q13","Q14","Q16","Q18","Q22","Q26","Q27"]
+
+attitude_items = ["Q3","Q9","Q10","Q19","Q21","Q29"]
+
+practice_items = ["Q2","Q4","Q20","Q7"]
+
+risk_items = ["Q6","Q15","Q17","Q23","Q24","Q25"]
+
+# Composite means (if needed)
+df["attitude_mean"] = df[attitude_items].mean(axis=1)
+df["practice_mean"] = df[practice_items].mean(axis=1)
 
 # =============================================================================
-# 1️⃣ Spearman correlations (Attitude vs Knowledge & Attitude)
+# 1️⃣ Spearman correlations
+# Practice vs Knowledge and Attitude
 # =============================================================================
 corr_results = []
 
-for q in practice_qs:
+for q in practice_items:
+
     valid_k = df[[q, "knowledge_score"]].dropna()
-    valid_a = df[[q, "attitude_composite"]].dropna()
+    valid_a = df[[q, "attitude_score"]].dropna()
 
     if len(valid_k) > 5:
         rho_k, p_k = spearmanr(valid_k[q], valid_k["knowledge_score"])
         corr_results.append(["Knowledge", q, rho_k, p_k])
 
     if len(valid_a) > 5:
-        rho_a, p_a = spearmanr(valid_a[q], valid_a["attitude_composite"])
+        rho_a, p_a = spearmanr(valid_a[q], valid_a["attitude_score"])
         corr_results.append(["Attitude", q, rho_a, p_a])
 
 corr_df = pd.DataFrame(
@@ -78,7 +78,8 @@ print("Spearman correlations saved")
 # =============================================================================
 kw_results = []
 
-for q in practice_qs:
+for q in practice_items:
+
     groups = [
         g[q].dropna()
         for _, g in df.groupby("cluster")
@@ -102,10 +103,12 @@ kw_df.to_csv(
 print("Kruskal–Wallis results saved")
 
 # =============================================================================
-# 3️⃣ Dunn post-hoc tests (only if Kruskal significant)
+# 3️⃣ Dunn post-hoc tests
 # =============================================================================
 for _, row in kw_df.iterrows():
+
     if row["p_value"] < 0.05:
+
         q = row["Question"]
 
         dunn = sp.posthoc_dunn(
@@ -117,8 +120,8 @@ for _, row in kw_df.iterrows():
 
         dunn_long = (
             dunn.reset_index()
-                .melt(id_vars="index", var_name="cluster_2", value_name="p_adj")
-                .rename(columns={"index": "cluster_1"})
+            .melt(id_vars="index", var_name="cluster_2", value_name="p_adj")
+            .rename(columns={"index": "cluster_1"})
         )
 
         dunn_long["Question"] = q
@@ -133,8 +136,9 @@ for _, row in kw_df.iterrows():
 # =============================================================================
 sns.set(style="whitegrid")
 
-for q in practice_qs:
-    plt.figure(figsize=(8, 5))
+for q in practice_items:
+
+    plt.figure(figsize=(8,5))
 
     sns.boxplot(
         data=df,
@@ -155,7 +159,8 @@ for q in practice_qs:
 
     plt.title(f"{q}: Practice Distribution by Knowledge Cluster")
     plt.xlabel("Knowledge-Based Cluster")
-    plt.ylabel("Normalised Practice Score")
+    plt.ylabel("Practice Score")
+
     plt.tight_layout()
 
     out_path = os.path.join(base_output, f"practice_{q}_by_cluster.png")
@@ -163,21 +168,21 @@ for q in practice_qs:
     plt.close()
 
 # =============================================================================
-# 4️⃣b Visualisation: Practice composite by cluster
+# 5️⃣ Visualisation: Practice composite by cluster
 # =============================================================================
-plt.figure(figsize=(8, 5))
+plt.figure(figsize=(8,5))
 
 sns.boxplot(
     data=df,
     x="cluster",
-    y="practice_composite",
+    y="practice_score",
     showfliers=False
 )
 
 sns.stripplot(
     data=df,
     x="cluster",
-    y="practice_composite",
+    y="practice_score",
     color="black",
     alpha=0.4,
     jitter=0.15,
@@ -186,11 +191,12 @@ sns.stripplot(
 
 plt.title("Practice Composite Score by Knowledge-Based Cluster")
 plt.xlabel("Knowledge-Based Clusters")
-plt.ylabel("Practice Composite Score")
+plt.ylabel("Practice Score")
+
 plt.tight_layout()
 
 out_path = os.path.join(base_output, "practice_composite_by_cluster.png")
 plt.savefig(out_path, dpi=300)
 plt.close()
 
-print("Non-parametric attitude analysis complete.")
+print("Practice vs knowledge analysis complete.")
