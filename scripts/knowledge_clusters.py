@@ -3,15 +3,7 @@ from kmodes.kprototypes import KPrototypes
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-def cluster_knowledge(data_csv, n_clusters=6, output_csv="clusters.csv", heatmap_file="clusters_boxplot.png"): #ajust here the number of clusters
-    """
-    Cluster respondents based on knowledge score and demographic one-hot data.
-    Also generate summary plots.
-
-    data_csv: /Users/bazam/dev/Italian_analysis/data/datacombined-italy2.csv
-    n_clusters: number of clusters 
-    output_csv: /Users/bazam/dev/Italian_analysis/results/
-    """
+def cluster_knowledge(data_csv, n_clusters=4, output_csv="clusters.csv", heatmap_file="clusters_boxplot.png"): #ajust here the number of clusters
     # Load dataset (skip first row of section headers, use second row for columns)
     df = pd.read_csv(data_csv)
 
@@ -23,8 +15,10 @@ def cluster_knowledge(data_csv, n_clusters=6, output_csv="clusters.csv", heatmap
     df["knowledge_score"] = df["knowledge_score"].astype(float)
 
     # Find categorical (binary) vs numeric columns
-    categorical_cols = [i for i, col in enumerate(df.columns) if set(df[col].unique()) <= {0, 1}]
-    numeric_cols = [i for i, col in enumerate(df.columns) if i not in categorical_cols]
+    numeric_col_names = ["knowledge_score", "attitude_score", "practice_score", "risk_score"]
+    categorical_col_names = [col for col in df.columns if col not in numeric_col_names]
+    categorical_cols = [df.columns.get_loc(col) for col in categorical_col_names]
+    
 
     # K-Prototypes clustering
     kproto = KPrototypes(n_clusters=n_clusters, random_state=42, init='Huang', n_init=10)
@@ -44,7 +38,8 @@ def cluster_knowledge(data_csv, n_clusters=6, output_csv="clusters.csv", heatmap
     print("\n=== Cluster Summaries ===")
     print(cluster_summary)
 
-    # --- Visualization 1: Boxplot of Knowledge Score per Cluster ---
+    # --- Visualization 1: Boxplot of Knowledge Score per Cluster --
+   
     plt.figure(figsize=(8, 6))
     sns.boxplot(x="Cluster", y="knowledge_score", data=df_out, palette="Set2")
     sns.stripplot(x="Cluster", y="knowledge_score", data=df_out, color="black", size=3, alpha=0.5)
@@ -67,6 +62,6 @@ def cluster_knowledge(data_csv, n_clusters=6, output_csv="clusters.csv", heatmap
 
     return df_out, cluster_summary
 
-df_clusters, summary = cluster_knowledge("/Users/bazam/dev/Italian_analysis/data/datacombined-italy2.csv", n_clusters=6) #adjust here the number of clusters
+df_clusters, summary = cluster_knowledge("/Users/bazam/dev/Italian_analysis/data/datacombined-italy2.csv", n_clusters=4) #adjust here the number of clusters
 
 print(summary)

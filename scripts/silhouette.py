@@ -5,9 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 def cluster_knowledge_with_silhouette(data_csv, n_clusters=4):
-    """
-    Cluster respondents with K-Prototypes and calculate silhouette score.
-    """
+   
     # Load dataset
     df = pd.read_csv(data_csv)
 
@@ -16,10 +14,9 @@ def cluster_knowledge_with_silhouette(data_csv, n_clusters=4):
     df["knowledge_score"] = df["knowledge_score"].astype(float)
 
     # Identify categorical vs numeric
-    categorical_cols = [
-    i for i, col in enumerate(df.columns)
-    if df[col].nunique() <= 5 and col not in ["knowledge_score","attitude_score","practice_score","risk_score"]
-    ]
+    numeric_col_names = ["knowledge_score", "attitude_score", "practice_score", "risk_score"]
+    categorical_col_names = [col for col in df.columns if col not in numeric_col_names]
+    categorical_cols = [df.columns.get_loc(col) for col in categorical_col_names]
     numeric_cols = [i for i, col in enumerate(df.columns) if i not in categorical_cols]
 
     # Fit clustering

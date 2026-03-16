@@ -1,23 +1,10 @@
-"""
-Create a raincloud-style plot of `risk_score` for each cluster.
-
-This script reads the combined dataset, groups `risk_score` values by
-cluster, and draws for each cluster a composite plot made of:
- - a violin (to show the distribution density),
- - a boxplot (to show median and IQR), and
- - jittered scatter points (to show individual observations).
-
-The violin/box/scatter are slightly offset horizontally so they appear
-as a single raincloud for each cluster.
-"""
-
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
 # --- Data loading and preparation ---
 # Read the combined dataset (adjust path if repo is moved)
-df = pd.read_csv("/Users/bazam/dev/Italian_analysis/data/datacombined-italy.csv")
+df = pd.read_csv("/Users/bazam/dev/Italian_analysis/data/datacombined-italy2.csv")
 
 # Ensure cluster labels are strings (helps with sorting and plotting)
 df["Cluster"] = df["Cluster"].astype(str)
