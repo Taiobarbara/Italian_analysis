@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from scipy.stats import gaussian_kde
 
 # Load dataset
-df = pd.read_csv("/Users/bazam/dev/Italian_analysis/data/demo_clusters.csv")
+df = pd.read_csv("/Users/bazam/dev/Italian_analysis/data/datacombined-italy2.csv")
 df["Cluster"] = df["Cluster"].astype(str)
 
 # Sort clusters numerically

@@ -18,7 +18,7 @@ plt.figure()
 # For each cluster draw violin (left), boxplot (center), and scatter (right)
 for i, cluster in enumerate(clusters):
     # Select the numeric scores for this cluster
-    cluster_data = df[df["Cluster"] == cluster]["risk_score"]
+    cluster_data = df[df["Cluster"] == cluster]["knowledge_score"]
 
     # Violin: show the full distribution density, shifted left slightly
     # positions: horizontal x-location; widths: overall violin width
