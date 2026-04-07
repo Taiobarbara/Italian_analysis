@@ -18,7 +18,7 @@ plt.figure()
 # For each cluster draw violin (left), boxplot (center), and scatter (right)
 for i, cluster in enumerate(clusters):
     # Select the numeric scores for this cluster
-    cluster_data = df[df["Cluster"] == cluster]["knowledge_score"]
+    cluster_data = df[df["Cluster"] == cluster]["risk_score"]
 
     # Violin: show the full distribution density, shifted left slightly
     # positions: horizontal x-location; widths: overall violin width
@@ -39,7 +39,7 @@ plt.xticks(range(1, len(clusters) + 1), clusters)
 plt.xlabel("Cluster")
 
 # Y-axis label describes what is being plotted (score variable)
-plt.ylabel("Practice Score")
+plt.ylabel("Risk Score")
 plt.title("Raincloud Plot of Risk Score per Cluster")
 
 # Show the composed raincloud plot

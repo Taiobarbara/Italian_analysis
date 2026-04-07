@@ -49,3 +49,19 @@ print(f"Knowledge: {mcdonalds_omega(df[knowledge_items]):.4f}")
 print(f"Attitude:  {mcdonalds_omega(df[attitude_items]):.4f}")
 print(f"Practice:  {mcdonalds_omega(df[practice_items]):.4f}")
 print(f"Risk:      {mcdonalds_omega(df[risk_items]):.4f}")
+
+print("\nMcDonald's Omega per Cluster (Knowledge)")
+
+cluster_omegas = []
+
+for cluster_id, subset in df.groupby("Cluster"):
+    omega_k = mcdonalds_omega(subset[knowledge_items])
+    
+    cluster_omegas.append((cluster_id, omega_k))
+    
+    print(f"Cluster {cluster_id}: {omega_k:.4f}")
+
+cluster_stats = df.groupby("Cluster")["knowledge_score"].agg(["mean", "std", "count"])
+
+print("\nKnowledge Score Statistics per Cluster:")
+print(cluster_stats)

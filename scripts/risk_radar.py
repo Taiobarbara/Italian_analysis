@@ -4,6 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from math import pi
 from sklearn.preprocessing import MinMaxScaler
+from scipy.stats import t
 
 # -----------------------------------------------------------------------------
 # File paths
@@ -51,48 +52,6 @@ scaler = MinMaxScaler()
 
 normalized = df[["respondent_id","cluster"] + dkapr_vars].copy()
 normalized[dkapr_vars] = scaler.fit_transform(normalized[dkapr_vars])
-
-# -----------------------------------------------------------------------------
-# Radar plot (DKAP + Risk composite)
-# -----------------------------------------------------------------------------
-categories = dkapr_vars
-N = len(categories)
-
-angles = [n / float(N) * 2 * pi for n in range(N)]
-angles += angles[:1]
-
-plt.figure(figsize=(10,10))
-
-for cluster_id, subset in normalized.groupby("cluster"):
-
-    values = subset[categories].mean().tolist()
-    values += values[:1]
-
-    plt.polar(
-        angles,
-        values,
-        label=f"Cluster {int(cluster_id)}",
-        linewidth=2
-    )
-
-plt.xticks(angles[:-1], categories, color="grey", size=12)
-
-plt.title(
-    "DKAP + Risk Profiles by Knowledge-Based Clusters",
-    size=16,
-    y=1.08
-)
-
-plt.legend(loc="upper right", bbox_to_anchor=(1.25,1.1))
-
-plt.tight_layout()
-
-radar_path = os.path.join(base_out,"DKAPR_cluster_profiles.png")
-
-plt.savefig(radar_path, dpi=300, bbox_inches="tight")
-plt.close()
-
-print("✅ DKAPR radar plot saved to:", radar_path)
 
 # -----------------------------------------------------------------------------
 # Radar plot with individual risk variables
@@ -150,3 +109,43 @@ plt.savefig(radar_path_items, dpi=300, bbox_inches="tight")
 plt.close()
 
 print("✅ DKAPR individual-item radar plot saved to:", radar_path_items)
+
+plt.figure(figsize=(12,7))
+
+x = np.arange(len(categories))
+
+for cluster_id, subset in normalized_items.groupby("cluster"):
+
+    data = subset[categories]
+    
+    means = data.mean()
+    sem = data.sem()
+    n = len(data)
+    
+    t_val = t.ppf(0.975, df=n-1) if n > 1 else 0
+    ci = sem * t_val
+
+    plt.errorbar(
+        x,
+        means,
+        yerr=ci,
+        label=f"Cluster {int(cluster_id)}",
+        marker='o',
+        capsize=4,
+        linewidth=2
+    )
+
+plt.xticks(x, categories, rotation=45, ha='right')
+
+plt.ylabel("Normalized Score (0–1)")
+plt.title("DKAP + Risk Variables by Cluster (Mean ± 95% CI)")
+
+plt.legend()
+plt.tight_layout()
+
+plot_path = os.path.join(base_out, "DKAPR_errorbar_profiles.png")
+plt.savefig(plot_path, dpi=300)
+plt.close()
+
+print("✅ Error bar plot saved to:", plot_path)
+
