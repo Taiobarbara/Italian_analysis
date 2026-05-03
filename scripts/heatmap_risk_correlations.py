@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
+from scipy.stats import spearmanr
 
 # ------------------------------------------------------------
 # Paths
@@ -128,3 +129,68 @@ plt.savefig(
 plt.close()
 
 print("✅ Focused DKAP vs risk items correlation matrix saved.")
+
+# ------------------------------------------------------------
+# Variables
+# ------------------------------------------------------------
+predictors = [
+    "knowledge_score",
+    "attitude_score",
+    "practice_score"
+]
+
+outcomes = [
+    "risk_score",
+    "Q6",
+    "Q15",
+    "Q17",
+    "Q23",
+    "Q24",
+    "Q25"
+]
+
+# ------------------------------------------------------------
+# Build correlation summary table
+# ------------------------------------------------------------
+results = []
+
+for outcome in outcomes:
+    row = {"Variable": outcome}
+
+    for predictor in predictors:
+        # Remove missing values pairwise
+        temp = df[[predictor, outcome]].dropna()
+
+        rho, pval = spearmanr(
+            temp[predictor],
+            temp[outcome]
+        )
+
+        # Store results
+        prefix = predictor.replace("_score", "").capitalize()
+
+        row[f"{prefix} (rho)"] = rho
+        row[f"{prefix} (p value)"] = pval
+
+    results.append(row)
+
+# Convert to dataframe
+corr_table = pd.DataFrame(results)
+
+# Optional: round values
+corr_table = corr_table.round(4)
+
+# ------------------------------------------------------------
+# Save CSV
+# ------------------------------------------------------------
+output_file = os.path.join(
+    base_out,
+    "DKAP_vs_risk_correlations.csv"
+)
+
+corr_table.to_csv(
+    output_file,
+    index=False
+)
+
+print(f"✅ Correlation table saved: {output_file}")
