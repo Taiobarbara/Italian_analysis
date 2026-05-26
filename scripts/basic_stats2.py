@@ -31,7 +31,7 @@ age_cols = [
     "age_over_65"
 ]
 
-score_col = "practice_score"
+score_col = "knowledge_score"
 
 # =========================================================
 # SCORE INTERVALS
@@ -137,13 +137,90 @@ age_test = pd.DataFrame({
     "p_value": [p_age]
 })
 
+# -------------------------
+# Kruskal-Wallis (Cluster vs Knowledge Score)
+# -------------------------
+
+# Get unique cluster IDs
+cluster_ids = sorted(df["Cluster"].dropna().unique())
+
+# Create one score vector per cluster
+cluster_groups = [
+    df[df["Cluster"] == cluster][score_col]
+    for cluster in cluster_ids
+]
+
+# Run Kruskal-Wallis test
+h_cluster, p_cluster = kruskal(*cluster_groups)
+
+cluster_test = pd.DataFrame({
+    "Test": ["Kruskal-Wallis"],
+    "Statistic": [h_cluster],
+    "p_value": [p_cluster]
+})
+
+print(cluster_test)
+
+# =========================================================
+# KRUSKAL-WALLIS FOR KNOWLEDGE QUESTIONS BY CLUSTER
+# =========================================================
+
+knowledge_questions = [
+    "Q1",
+    "Q5",
+    "Q8",
+    "Q11",
+    "Q12",
+    "Q13",
+    "Q14",
+    "Q16",
+    "Q18",
+    "Q22",
+    "Q26",
+    "Q27"
+]
+
+question_results = []
+
+# Get cluster IDs
+cluster_ids = sorted(df["Cluster"].dropna().unique())
+
+for question in knowledge_questions:
+
+    # Create one group per cluster
+    groups = [
+        df[df["Cluster"] == cluster][question].dropna()
+        for cluster in cluster_ids
+    ]
+
+    # Run Kruskal-Wallis
+    h_stat, p_value = kruskal(*groups)
+
+    # Store results
+    question_results.append({
+        "Question": question,
+        "Statistic": h_stat,
+        "p_value": p_value
+    })
+
+# Convert to dataframe
+knowledge_question_tests = pd.DataFrame(question_results)
+
+# Round values
+numeric_cols = knowledge_question_tests.select_dtypes(include=np.number).columns
+knowledge_question_tests[numeric_cols] = (
+    knowledge_question_tests[numeric_cols].round(4)
+)
+
+print(knowledge_question_tests)
+
 # =========================================================
 # ROUND RESULTS
 # =========================================================
 tables_to_round = [
     gender_intervals, education_intervals, age_intervals,
     gender_stats, education_stats, age_stats,
-    gender_test, education_test, age_test
+    gender_test, education_test, age_test, cluster_test
 ]
 
 for table in tables_to_round:
@@ -153,7 +230,7 @@ for table in tables_to_round:
 # =========================================================
 # EXPORT TO EXCEL
 # =========================================================
-output_file = "practice_score_analysis.xlsx"
+output_file = "knowledge_score_cluster_analysis.xlsx"
 
 with pd.ExcelWriter(output_file) as writer:
     gender_intervals.to_excel(writer, sheet_name="Gender_Intervals", index=False)
@@ -165,6 +242,13 @@ with pd.ExcelWriter(output_file) as writer:
     gender_test.to_excel(writer, sheet_name="Gender_Test", index=False)
     education_test.to_excel(writer, sheet_name="Education_Test", index=False)
     age_test.to_excel(writer, sheet_name="Age_Test", index=False)
+    cluster_test.to_excel(writer, sheet_name="Cluster_Test", index=False)
+
+knowledge_question_tests.to_excel(
+    writer,
+    sheet_name="Knowledge_Q_Cluster_Test",
+    index=False
+)
 
 print("Analysis complete.")
 print(f"Results saved to: {output_file}")

@@ -13,7 +13,7 @@ df = pd.read_csv(input_file)
 # SETTINGS
 # =========================================================
 
-score_col = "practice_score"
+score_col = "knowledge_score"
 
 cluster_col = "Cluster"
 
@@ -166,7 +166,7 @@ for table in [interval_table, stats_table]:
 # EXPORT TO EXCEL
 # =========================================================
 
-output_file = "practice_score_cluster_analysis.xlsx"
+output_file = "knowledge_score_cluster_analysis.xlsx"
 
 with pd.ExcelWriter(output_file) as writer:
 
