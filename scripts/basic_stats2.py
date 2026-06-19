@@ -31,7 +31,7 @@ age_cols = [
     "age_over_65"
 ]
 
-score_col = "knowledge_score"
+score_col = "risk_score"
 
 # =========================================================
 # SCORE INTERVALS
