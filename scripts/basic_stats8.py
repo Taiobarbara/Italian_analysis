@@ -136,15 +136,3 @@ results = pd.DataFrame(results)
 print(results)
 
 results.to_csv("chi_square_summary.csv", index=False)
-
-pd.crosstab(
-    df["age"],
-    df["Q11"],
-    normalize="index"
-).round(3) * 100
-
-pd.crosstab(
-    df["educational_level"],
-    df["Q11"],
-    normalize="index"
-).round(3) * 100
