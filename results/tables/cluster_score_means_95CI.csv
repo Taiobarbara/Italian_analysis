@@ -1,0 +1,21 @@
+Group,Score,n,Mean,SD,SE,95% CI lower,95% CI upper
+Whole sample,knowledge_score,1036,0.735,0.18,0.006,0.724,0.746
+Whole sample,attitude_score,1036,0.78,0.149,0.005,0.771,0.789
+Whole sample,practice_score,1036,0.705,0.217,0.007,0.692,0.719
+Whole sample,risk_score,1036,0.822,0.218,0.007,0.809,0.836
+Cluster 0,knowledge_score,279,0.788,0.101,0.006,0.777,0.8
+Cluster 0,attitude_score,279,0.833,0.108,0.006,0.821,0.846
+Cluster 0,practice_score,279,0.833,0.142,0.009,0.816,0.85
+Cluster 0,risk_score,279,0.871,0.09,0.005,0.86,0.881
+Cluster 1,knowledge_score,162,0.431,0.201,0.016,0.4,0.462
+Cluster 1,attitude_score,162,0.583,0.172,0.013,0.557,0.61
+Cluster 1,practice_score,162,0.62,0.224,0.018,0.586,0.655
+Cluster 1,risk_score,162,0.359,0.115,0.009,0.342,0.377
+Cluster 2,knowledge_score,259,0.788,0.104,0.006,0.776,0.801
+Cluster 2,attitude_score,259,0.761,0.095,0.006,0.75,0.773
+Cluster 2,practice_score,259,0.474,0.145,0.009,0.457,0.492
+Cluster 2,risk_score,259,0.928,0.074,0.005,0.919,0.937
+Cluster 3,knowledge_score,336,0.795,0.108,0.006,0.784,0.807
+Cluster 3,attitude_score,336,0.845,0.108,0.006,0.833,0.857
+Cluster 3,practice_score,336,0.819,0.129,0.007,0.805,0.833
+Cluster 3,risk_score,336,0.924,0.068,0.004,0.917,0.931

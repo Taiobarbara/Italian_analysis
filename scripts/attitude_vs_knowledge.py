@@ -48,6 +48,42 @@ print(f"📈 Spearman correlations saved to: {output_corr}")
 print(corr_df.round(3))
 
 # =============================================================================
+# 1b. Bootstrap 95% CIs for Spearman correlations: Q21 and Q29
+# =============================================================================
+import numpy as np
+from scipy.stats import bootstrap
+
+for q in ["Q21", "Q29"]:
+    valid = df[[q, "knowledge_score"]].dropna()
+
+    x = valid[q].to_numpy()
+    y = valid["knowledge_score"].to_numpy()
+
+    rho, p = spearmanr(x, y)
+
+    def spearman_statistic(x, y):
+        return spearmanr(x, y).statistic
+
+    boot_result = bootstrap(
+        (x, y),
+        spearman_statistic,
+        paired=True,
+        n_resamples=5000,
+        confidence_level=0.95,
+        method="percentile",
+        rng=np.random.default_rng(42)
+    )
+
+    ci_low = boot_result.confidence_interval.low
+    ci_high = boot_result.confidence_interval.high
+
+    print(
+        f"Knowledge score vs {q}: "
+        f"rho = {rho:.3f}, "
+        f"95% CI [{ci_low:.3f}, {ci_high:.3f}], "
+        f"p = {p:.6g}, N = {len(valid)}"
+    )
+# =============================================================================
 # 2. Attitude differences across knowledge clusters (Kruskal–Wallis)
 # =============================================================================
 kw_results = []
