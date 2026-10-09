@@ -34,6 +34,58 @@ def fit_kproto(df, categorical_cols, k):
     return clusters
 
 
+# ── Elbow method: K-Prototypes cost ─────────────────────────────────────────
+
+def elbow_analysis(df, categorical_cols, k_range=range(1, 9)):
+    """
+    Calculate K-Prototypes cost for each candidate k.
+    Lower cost indicates a better fit, but cost always tends
+    to decrease as the number of clusters increases.
+    """
+    results = []
+
+    for k in k_range:
+        model = KPrototypes(
+            n_clusters=k,
+            random_state=42,
+            init="Huang",
+            n_init=10
+        )
+
+        model.fit_predict(df, categorical=categorical_cols)
+
+        results.append({
+            "k": k,
+            "Cost": model.cost_
+        })
+
+        print(f"k = {k}: cost = {model.cost_:.2f}")
+
+    elbow_df = pd.DataFrame(results)
+
+    # Plot elbow curve
+    plt.figure(figsize=(8, 5))
+    plt.plot(
+        elbow_df["k"],
+        elbow_df["Cost"],
+        marker="o"
+    )
+    plt.xticks(elbow_df["k"])
+    plt.xlabel("Number of clusters (k)")
+    plt.ylabel("K-Prototypes cost")
+    plt.title("Elbow Method for K-Prototypes")
+    plt.grid(True, alpha=0.4)
+    plt.tight_layout()
+
+    plt.savefig(
+        "/Users/bazam/dev/Italian_analysis/results/kprototypes_elbow.png",
+        dpi=300,
+        bbox_inches="tight"
+    )
+    plt.show()
+
+    return elbow_df
+
 # ── 1. Per-cluster silhouette breakdown ──────────────────────────────────────
 
 def per_cluster_silhouette(df, categorical_col_names, categorical_cols, k):
@@ -117,9 +169,89 @@ def intracluster_cronbach(df, categorical_col_names, categorical_cols, k):
 
 df, respondent_ids, categorical_col_names, categorical_cols = load_and_prep(DATA_PATH)
 
+# ── Elbow analysis ──────────────────────────────────────────────────────────
+elbow_df = elbow_analysis(
+    df,
+    categorical_cols,
+    k_range=range(1, 9)
+)
+
+print("\n=== Elbow Method Results ===")
+print(elbow_df.round(2))
+
+
+from sklearn.metrics import adjusted_rand_score
+
+# ── Compare membership: k=2 versus k=4 ──────────────────────────────────────
+
+# Fit both solutions to the full dataset
+clusters_k2 = fit_kproto(df, categorical_cols, 2)
+clusters_k4 = fit_kproto(df, categorical_cols, 4)
+
+comparison = pd.DataFrame({
+    "k2_cluster": clusters_k2,
+    "k4_cluster": clusters_k4
+})
+
+# Cross-tabulation of cluster membership
+cross_tab = pd.crosstab(
+    comparison["k2_cluster"],
+    comparison["k4_cluster"],
+    margins=True
+)
+
+print("\n=== Cluster Membership Cross-tabulation ===")
+print(cross_tab)
+
+# Identify the smaller cluster in the k=2 solution
+sizes_k2 = pd.Series(clusters_k2).value_counts()
+small_cluster_k2 = sizes_k2.idxmin()
+
+small_group = comparison[
+    comparison["k2_cluster"] == small_cluster_k2
+]
+
+n_small_k2 = len(small_group)
+
+# Assess overlap with each k=4 cluster
+overlap_results = []
+
+for cluster4 in sorted(comparison["k4_cluster"].unique()):
+    group4 = comparison[comparison["k4_cluster"] == cluster4]
+
+    intersection = len(
+        small_group[small_group["k4_cluster"] == cluster4]
+    )
+
+    n_cluster4 = len(group4)
+    union = n_small_k2 + n_cluster4 - intersection
+
+    overlap_results.append({
+        "k2_small_cluster": small_cluster_k2,
+        "k4_cluster": cluster4,
+        "n_k2_small": n_small_k2,
+        "n_k4_cluster": n_cluster4,
+        "overlap_n": intersection,
+        "k2_cluster_retained_%": 100 * intersection / n_small_k2,
+        "k4_cluster_purity_%": 100 * intersection / n_cluster4,
+        "Jaccard_similarity": intersection / union
+    })
+
+overlap_df = pd.DataFrame(overlap_results).sort_values(
+    "Jaccard_similarity", ascending=False
+)
+
+print("\n=== Overlap of the Smaller k=2 Cluster with k=4 Clusters ===")
+print(overlap_df.round(3).to_string(index=False))
+
+# Overall agreement between the two partitions
+overall_ari = adjusted_rand_score(clusters_k2, clusters_k4)
+
+print(f"\nOverall ARI between k=2 and k=4: {overall_ari:.3f}")
+
 summary = {}
 
-for k in range(2, 8):
+for k in range(2, 6):
     print(f"\n{'='*40}\n k = {k} clusters\n{'='*40}")
     
     # Global silhouette
