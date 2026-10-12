@@ -60,7 +60,6 @@ onehot_to_category(df, education_cols, "educational_level")
 df["Q11"] = np.where(df["Q11_Yes"] == 1, "Yes", "No")
 df["Q22"] = np.where(df["Q22_Yes"] == 1, "Yes", "No")
 
-
 # ------------------------------------------------------------------
 # Chi-square function
 # ------------------------------------------------------------------
@@ -72,6 +71,97 @@ def cramers_v(contingency):
     r, k = contingency.shape
 
     return np.sqrt(chi2 / (n * (min(r - 1, k - 1))))
+
+# =============================================================================
+# Bootstrap 95% CIs for Cramer's V: Q11 vs demographics
+# =============================================================================
+
+
+def bootstrap_cramers_v_ci(
+    df,
+    demographic,
+    question="Q11",
+    n_boot=10000,
+    confidence=0.95,
+    seed=42
+):
+    # Keep valid observations and reset the index
+    data = (
+        df[[demographic, question]]
+        .dropna()
+        .reset_index(drop=True)
+    )
+
+    # Encode categories as integer codes
+    x, categories_x = pd.factorize(data[demographic], sort=True)
+    y, categories_y = pd.factorize(data[question], sort=True)
+
+    n = len(data)
+    r = len(categories_x)
+    k = len(categories_y)
+
+    if n == 0 or r < 2 or k < 2:
+        print(f"{demographic}: insufficient data or categories.")
+        return
+
+    # Observed Cramer's V
+    observed_table = np.zeros((r, k), dtype=int)
+    np.add.at(observed_table, (x, y), 1)
+
+    observed_v = cramers_v(pd.DataFrame(observed_table))
+
+    rng = np.random.default_rng(seed)
+    bootstrap_values = []
+
+    for _ in range(n_boot):
+        # Resample respondents with replacement
+        idx = rng.integers(0, n, size=n)
+
+        # Build contingency table without crosstab/reindex
+        table = np.zeros((r, k), dtype=int)
+        np.add.at(table, (x[idx], y[idx]), 1)
+
+        # Skip samples where a category is absent
+        if (
+            np.any(table.sum(axis=1) == 0)
+            or np.any(table.sum(axis=0) == 0)
+        ):
+            continue
+
+        v = cramers_v(pd.DataFrame(table))
+
+        if np.isfinite(v):
+            bootstrap_values.append(v)
+
+    if len(bootstrap_values) < 100:
+        print(
+            f"Warning: only {len(bootstrap_values)} valid "
+            f"bootstrap samples for {demographic}."
+        )
+
+    if not bootstrap_values:
+        print(f"{demographic}: CI could not be estimated.")
+        return
+
+    alpha = 1 - confidence
+    ci_low, ci_high = np.quantile(
+        bootstrap_values,
+        [alpha / 2, 1 - alpha / 2]
+    )
+
+    print(
+        f"Q11 vs {demographic}: "
+        f"Cramer's V = {observed_v:.3f}, "
+        f"95% bootstrap CI [{ci_low:.3f}, {ci_high:.3f}], "
+        f"valid bootstrap samples = "
+        f"{len(bootstrap_values)}/{n_boot}, "
+        f"N = {n}"
+    )
+
+
+# Run for Q11 only
+for demographic in ["gender", "age", "educational_level"]:
+    bootstrap_cramers_v_ci(df, demographic)
 
 
 def run_chi_square(df, question, demographic):
